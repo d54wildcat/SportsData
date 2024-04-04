@@ -1,0 +1,83 @@
+
+﻿using System;
+using System.Collections.Generic;
+using System.Data.SqlClient;
+using System.Net.HTTP;
+using System.Text;
+using System.Threading.Tasks;
+using Newtonsoft.JSON;
+
+using MyNamespace;//Need to create a namespace to use so the models can be used in this
+;
+
+public class PullCollegeFootballAPI
+{
+	public PullCollegeFootballAPI()
+	{
+		static async Task main(string[] args)
+		{
+			//Data for any FBS team in college football.
+			//This gives a teamID to use for others
+			string fbsTeamsData = await GetJsonData("https://api.collegefootballdata.com/teams/fbs");
+			//Coaching data with previous teams as well.
+			//Uses first and last name to search for previous teams and info, NOT CoachID
+			string coachData = await GetJsonData("https://api.collegefootballdata.com/coaches");
+			//Roster data for given teams and seasons.
+			//Gives a season ID along with every player on the roster for that season
+			//Will have to place certain information into correct tables.
+			string rosterData = await GetJsonData("https://api.collegefootballdata.com/roster");
+			//Data for all conferences, includes recent realignment of Pac12
+			//ConferenceIDs
+			string conferenceData = await GetJsonData("https://api.collegefootballdata.com/conferences");
+			//Allows for specific players
+			//Gives a playerID
+			string playerData = await GetJsonData("https://api.collegefootballdata.com/players");//
+
+			//This is where we deserialize the information from the API and put the information into lists to parse into tables
+            List<Team> fbsTeams = JsonConvert.DeserializeObject<List<Team>>(fbsTeamsData);//Need to create the models to use for this.
+			List<Player> players = JsonConvert.DeserializeObject<List<Player>>(playerData);//Need to create the models to use for this.
+            List<Conference> conferences = JsonConvert.DeserializeObject<List<Conference>>(conferenceData);//Might not have conference?
+            List<Roster> rosters = JsonConvert.DeserializeObject<List<Roster>>(rosterData);// Might not have roster?
+			List<Coach> coaches = JsonConvert.DeserializeObject<List<Coach>>(coaches);
+
+			//Connects to the sql server
+            string connectionString = "(localdb)\\MSSQLLocalDB";//Replace with our connection string
+			using (SqlConnection connection = new SqlConnection(connectionString))
+			{
+				await connection.OpenAsync();
+
+				//Insert team data
+				foreach(Team team in fbsTeams)
+				{
+					await InsertTeamData(connection, team);
+				}
+
+				//insert roster data
+				foreach(Roster roster in rosters)
+				{
+					await InsertRosterData(connection, roster);
+				}
+
+				//insert Player Data
+				foreach(Player player in players)
+				{
+					await InsertPlayerData(connection, player);
+				}
+
+				//insert Coach
+				foreach(Coach coach in coaches)
+				{
+					await InsertCoachData(connection, coach);
+				}
+
+				//insert Conference data
+				foreach(Coneference c in conferences)
+				{
+					await InsertConferenceData(connection, conferences);
+				}
+			}
+     }
+	}
+
+
+}
