@@ -45,7 +45,15 @@ CREATE TABLE [560_proj_Group09].Player
 
 CREATE TABLE [560_proj_Group09].Conference
 (
-    ConferenceName NVARCHAR(128) NOT NULL PRIMARY KEY
+    ConferenceName INT NOT NULL IDENTITY(1,1) PRIMARY KEY,
+    [Name] NVARCHAR(128) NOT NULL,
+    ShortName NVARCHAR(32) NOT NULL,
+
+    UNIQUE
+    (
+        [Name],
+        ShortName
+    )
 );
 
 CREATE TABLE [560_proj_Group09].Season
